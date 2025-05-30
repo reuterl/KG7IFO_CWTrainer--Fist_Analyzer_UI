@@ -8,9 +8,9 @@ import signal
 from PyQt6.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QTextEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator, QPixmap, QCursor, QTextCursor
-from PyQt6 import QtGui, QtCore, Qt6
+from PyQt6 import QtGui, QtCore, Qt6, uic
 from threading import Thread
-from FRDM_K22_COMM import XmitRcvUART
+from XmitRcvUART import XmitRcvUART
 from msggenerator import (SendMorseMsg,
                           PlayMorseMsg,
                           SendSideTone,
@@ -23,7 +23,7 @@ from msggenerator import (SendMorseMsg,
                           morseCharSeqEntry,
                           morseElementenum)
 from queue import Empty, Queue
-from MorseTrain import Ui_CWmainWin
+#from MorseTrain import Ui_CWmainWin
 from morseAnalyzerDialog import morseAnalyzerDialog
 
 import time
@@ -85,8 +85,11 @@ class MainWindow(QMainWindow):
 
         self.prosignList = prosignTable()
 
-        self.UI = Ui_CWmainWin()
-        self.UI.setupUi(self)
+        #self.UI = Ui_CWmainWin()
+        #self.UI = uic.loadUi("MorseTrain.ui")
+        uic.loadUi("MorseTrain.ui", self)
+        #self.UI.setupUi(self)
+        self.show()
 
         #self.resize(830, 640)
 
@@ -100,33 +103,33 @@ class MainWindow(QMainWindow):
         self.SerialComm.startrcv()
         self.SerialComm.startxmit()
 
-        self.UI.pushButtonPlay.clicked.connect(self.playMorseText)
-        self.UI.pushButtonLoad.clicked.connect(self.loadPlayMorseText)
-        self.UI.pushButtonClear.clicked.connect(self.clearMorseText)
-        self.UI.pushButtonSideTone.clicked.connect(self.pushButtonSideTone)
-        self.UI.pushButtonStop.clicked.connect(self.pushButtonStop)
+        self.pushButtonPlay.clicked.connect(self.playMorseText)
+        self.pushButtonLoad.clicked.connect(self.loadPlayMorseText)
+        self.pushButtonClear.clicked.connect(self.clearMorseText)
+        self.pushButtonSideTone.clicked.connect(self.handlepushButtonSideTone)
+        self.pushButtonStop.clicked.connect(self.handlepushButtonStop)
 
-        self.UI.morseTextEdit.mousePressEvent = self.ThemousePressEvent
-        self.UI.morseTextEdit.mouseReleaseEvent = self.ThemouseReleaseEvent
-        self.UI.morseTextEdit.setCursor(Qt.CursorShape.ArrowCursor)
+        self.morseTextEdit.mousePressEvent = self.ThemousePressEvent
+        self.morseTextEdit.mouseReleaseEvent = self.ThemouseReleaseEvent
+        self.morseTextEdit.setCursor(Qt.CursorShape.ArrowCursor)
 
         self.morseTextStream = []
         self.idxMorseTextStream = -1
 
-        self.morseTextStreamPos = self.UI.morseTextEdit.pos()
+        self.morseTextStreamPos = self.morseTextEdit.pos()
 
-        self.UI.pushButtonClearPlay.clicked.connect(self.clearMorseTextPlay)
+        self.pushButtonClearPlay.clicked.connect(self.clearMorseTextPlay)
 
-        self.UI.lineEditSideTone.setValidator(QDoubleValidator(100.0, 1000.0, 3))
-        self.UI.lineEditSideTone.installEventFilter(self)
-        self.UI.pushButtonSideTone.setDisabled(True)
+        self.lineEditSideTone.setValidator(QDoubleValidator(100.0, 1000.0, 3))
+        self.lineEditSideTone.installEventFilter(self)
+        self.pushButtonSideTone.setDisabled(True)
 
-        self.UI.comboBoxWPM.addItems(["5", "10", "15", "20", "25", "30", "40", "60"])
-        self.UI.checkBoxFarnsworth.clicked.connect(self.checkBoxFarnsworth)
+        self.comboBoxWPM.addItems(["5", "10", "15", "20", "25", "30", "40", "60"])
+        self.checkBoxFarnsworth.clicked.connect(self.handlecheckBoxFarnsworth)
 
-        self.UI.toolButtonPlayBack.clicked.connect(self.playbackButton)
-        self.UI.lineEditScore.setText("0")
-        self.UI.lineEditWPM.setText("0")
+        self.toolButtonPlayBack.clicked.connect(self.playbackButton)
+        self.lineEditScore.setText("0")
+        self.lineEditWPM.setText("0")
         self.charctersReceived = 0
         self.morseTextPosition = 0
 
@@ -137,20 +140,20 @@ class MainWindow(QMainWindow):
 
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.Type.Leave:
-            if self.UI.lineEditSideTone.hasAcceptableInput():
-                self.UI.pushButtonSideTone.setDisabled(False)
+            if self.lineEditSideTone.hasAcceptableInput():
+                self.pushButtonSideTone.setDisabled(False)
         return False
 
     def leaf(self):
         print("--EventFilter--")
-        if self.UI.lineEditSideTone.hasAcceptableInput():
-            self.UI.pushButtonSideTone.setDisabled(False)
+        if self.lineEditSideTone.hasAcceptableInput():
+            self.pushButtonSideTone.setDisabled(False)
 
     def ThemousePressEvent(self, e):
         print(">>>mousePressEvent<<<")
         if e.button() == QtCore.Qt.MouseButton.LeftButton:
-            print("Mouse text cursor position", self.UI.morseTextEdit.cursorForPosition(e.pos()).position())
-            textPosition = self.UI.morseTextEdit.cursorForPosition(e.pos()).position()
+            print("Mouse text cursor position", self.morseTextEdit.cursorForPosition(e.pos()).position())
+            textPosition = self.morseTextEdit.cursorForPosition(e.pos()).position()
             if len(self.morseTextStream) != 0:
                 for MCT in self.morseTextStream:
                     if (textPosition >= MCT.getEditTextIdxStart()) and (textPosition <= MCT.getEditTextIdxEnd()):
@@ -174,16 +177,16 @@ class MainWindow(QMainWindow):
         self.analyzeDialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
         self.analyzeDialog.exec()
 
-    def checkBoxFarnsworth(self):
-        enabled = self.UI.checkBoxFarnsworth.isChecked()
+    def handlecheckBoxFarnsworth(self):
+        enabled = self.checkBoxFarnsworth.isChecked()
         SFW = SendFarnsworth(enabled)
         self.msgXmitQueue.put(SFW.getMsg())
 
     def playbackButton(self):
-        self.UI.plainTextEdit.setPlainText(self.UI.morseTextEdit.toPlainText())
+        self.plainTextEdit.setPlainText(self.morseTextEdit.toPlainText())
         self.loadPlayMorseText()
 
-    def pushButtonStop(self):
+    def handlepushButtonStop(self):
         print("Stop!")
         SMM = StopMorseMsg()
         self.msgXmitQueue.put(SMM.getMsg())
@@ -207,27 +210,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print("Failed receive message!", e)
 
-        self.UI.morseTextEdit.moveCursor(QtGui.QTextCursor.MoveOperation.End, QtGui.QTextCursor.MoveMode.MoveAnchor)
+        self.morseTextEdit.moveCursor(QtGui.QTextCursor.MoveOperation.End, QtGui.QTextCursor.MoveMode.MoveAnchor)
 
-        MCT.setEditTextIdxStart(self.UI.morseTextEdit.cursorForPosition(self.UI.morseTextEdit.pos()).position())
+        MCT.setEditTextIdxStart(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position())
 
         if MCT.prosign:
             print("Prosign")
             prosignIdx = MCT.getMorsePro()
             morseChar = '\\' + self.prosignList.prosign[prosignIdx]
-            MCT.setEditTextIdxEnd(self.UI.morseTextEdit.cursorForPosition(self.UI.morseTextEdit.pos()).position()+len(morseChar)-1)
+            MCT.setEditTextIdxEnd(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position()+len(morseChar)-1)
         else:
             if MCT.valid:
                 morseChar = MCT.getMorseChar()
             else:
                 morseChar = chr(0xBF)
 
-            MCT.setEditTextIdxEnd(self.UI.morseTextEdit.cursorForPosition(self.UI.morseTextEdit.pos()).position())
-        self.UI.morseTextEdit.insertPlainText(morseChar)
+            MCT.setEditTextIdxEnd(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position())
+        self.morseTextEdit.insertPlainText(morseChar)
         if MCT.getSpaceAfter():
-            self.UI.morseTextEdit.insertPlainText(" ")
+            self.morseTextEdit.insertPlainText(" ")
         if MCT.getIdleAfter():
-            self.UI.morseTextEdit.insertPlainText("\r\n")
+            self.morseTextEdit.insertPlainText("\r\n")
         try:
             self.morseTextStream.append(MCT)
         except Exception as e:
@@ -263,16 +266,16 @@ class MainWindow(QMainWindow):
 
         if self.charctersReceived == 1:
             displayWPM = WPM
-            self.UI.lineEditWPM.setText("{0:d}".format(int(displayWPM)))
+            self.lineEditWPM.setText("{0:d}".format(int(displayWPM)))
         else:
-            runningWPM = int(self.UI.lineEditWPM.text())
+            runningWPM = int(self.lineEditWPM.text())
             runningWPM += WPM
-            self.UI.lineEditWPM.setText("{0:d}".format(int((runningWPM/2.0)+0.5)))
+            self.lineEditWPM.setText("{0:d}".format(int((runningWPM/2.0)+0.5)))
         #
         # Score
         #
         scoreAwarded = 5
-        self.UI.lineEditScore.setText("{0:d}".format(scoreAwarded))
+        self.lineEditScore.setText("{0:d}".format(scoreAwarded))
         MCT.setScore(scoreAwarded)
 
     def WPM2ms(self, WPM):
@@ -282,7 +285,7 @@ class MainWindow(QMainWindow):
         return 1200/MS
 
     def editSideTone(self):
-        print("Frequency {0:s}".format(self.UI.lineEditSideTone.text()))
+        print("Frequency {0:s}".format(self.lineEditSideTone.text()))
 
     def editToFloat(self, value):
         if value == '':
@@ -290,30 +293,30 @@ class MainWindow(QMainWindow):
         return float(value)
 
     def clearMorseTextPlay(self):
-        self.UI.plainTextEdit.setPlainText("")
+        self.plainTextEdit.setPlainText("")
 
     def clearMorseText(self):
-        self.UI.morseTextEdit.setPlainText("")
+        self.morseTextEdit.setPlainText("")
         self.morseTextStream = []
-        self.morseTextStreamPos = self.UI.morseTextEdit.pos()
-        self.UI.lineEditScore.setText("0")
-        self.UI.lineEditWPM.setText("0")
+        self.morseTextStreamPos = self.morseTextEdit.pos()
+        self.lineEditScore.setText("0")
+        self.lineEditWPM.setText("0")
         self.charctersReceived = 0
         self.morseTextPosition = 0
 
     def loadPlayMorseText(self):
-        txt = self.UI.plainTextEdit.toPlainText()
+        txt = self.plainTextEdit.toPlainText()
         SMM = SendMorseMsg(txt)
         self.msgXmitQueue.put(SMM.getMsg())
 
     def playMorseText(self):
-        WPM = int(self.UI.comboBoxWPM.currentText())
+        WPM = int(self.comboBoxWPM.currentText())
         PMM = PlayMorseMsg(WPM)
         self.msgXmitQueue.put(PMM.getMsg())
 
-    def pushButtonSideTone(self):
+    def handlepushButtonSideTone(self):
         print("pushButtonSideTone")
-        sidetone = self.editToFloat(self.UI.lineEditSideTone.text())
+        sidetone = self.editToFloat(self.lineEditSideTone.text())
         SST = SendSideTone(sidetone)
         self.msgXmitQueue.put(SST.getMsg())
 # =====================================================================================================================
