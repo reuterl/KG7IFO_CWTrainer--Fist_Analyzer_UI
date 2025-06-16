@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets, uic
-from morseAnalyzer import Ui_DialogMorseAnalyzer
+#from morseAnalyzer import Ui_DialogMorseAnalyzer
 from PyQt6.QtGui import QPixmap, QColor, QFont
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

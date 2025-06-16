@@ -3,11 +3,16 @@
 
 # Only needed for access to command line arguments
 import sys
+import glob
 import os
-import signal
-from PyQt6.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QTextEdit
+#import signal
+# to find execution script directory
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+
+from PyQt6.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QTextEdit, QMessageBox
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QDoubleValidator, QPixmap, QCursor, QTextCursor
+from PyQt6.QtGui import QDoubleValidator, QPixmap, QCursor, QTextCursor, QAction
 from PyQt6 import QtGui, QtCore, Qt6, uic
 from threading import Thread
 from XmitRcvUART import XmitRcvUART
@@ -25,7 +30,7 @@ from msggenerator import (SendMorseMsg,
 from queue import Empty, Queue
 #from MorseTrain import Ui_CWmainWin
 from morseAnalyzerDialog import morseAnalyzerDialog
-
+from LoremIpsum import LoremIpsumText
 import time
 from PyQt6.QtCore import (
     pyqtSignal,
@@ -74,24 +79,124 @@ class Consumer(QtCore.QThread):
             del msg
         print("Consumer thread ends.")
 
+# =============================================================================
+class serialCommPortDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("serialCommPortDlg.ui", self)
+        self.show()
+        self.setWindowTitle("Arduino Serial Communications")
+        ports = self.serial_ports()
+        self.currentItem = ""
+        if ports == []:
+            msgBox = QMessageBox()
+            msgBox.setText("No unencumbered serial ports detected. Sorry.")
+            msgBox.setWindowTitle("Abandon all hope")
+            returnValue = msgBox.exec()
+        else:
+            self.selectCommPort.addItems(ports)
+            #self.selectCommPort.setCurrentText(ports[0])
 
+            # Default
+            self.setCurrentItem()
+            #detect user selection
+            self.selectCommPort.activated.connect(self.setCurrentItem)
+
+    def cancelEvent(self, event):
+        print("Cancelled.")
+
+    def setCurrentItem(self):
+        self.currentItem = self.selectCommPort.currentText()
+
+    def getCurrentItem(self):
+        return self.currentItem
+
+    def serial_ports(self):
+        """ Lists serial port names
+
+            :raises EnvironmentError:
+                On unsupported or unknown platforms
+            :returns:
+                A list of the serial ports available on the system
+        """
+        if sys.platform.startswith('win'):
+            ports = ['COM%s' % (i + 1) for i in range(256)]
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+            # this excludes your current terminal "/dev/tty"
+            ports = glob.glob('/dev/tty[A-Za-z]*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/tty.*')
+        else:
+            raise EnvironmentError('Unsupported platform')
+
+        result = []
+        for port in ports:
+            try:
+                s = serial.Serial(port)
+                s.close()
+                result.append(port)
+            except (OSError, serial.SerialException):
+                pass
+        return result
+
+# =============================================================================
+class arduinoCommPath(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("ArduinoCommPath.ui", self)
+        self.show()
+
+        self.selectedPath = ""
+        self.setWindowTitle("Arduino Communications Path Selector")
+        self.pushButtonSerial.clicked.connect(self.serialButton)
+        self.pushButtonWiFi.clicked.connect(self.wifiButton)
+
+
+    def serialButton(self):
+        print("Serial")
+        self.selectedPath = "serial"
+        self.close()
+
+    def wifiButton(self):
+        print ("WiFi")
+        self.selectedPath = "wifi"
+        self.close()
+
+    def getSelected(self):
+        return self.selectedPath
+
+
+# =============================================================================
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+
         print(platform.system())
         print(platform.release())
-        print(list(serial.tools.list_ports.comports()))
+
+        # find the home directory of the executable.
+        filename = getframeinfo(currentframe()).filename
+        self.parentDirectory = Path(filename).resolve().parent
+
+        self.serialPortInUse = "TBD-Serial"
+        self.wifiInUse = "TBD-WiFi"
+        self.commMethodInUse = "TBD"
 
         self.prosignList = prosignTable()
 
-        #self.UI = Ui_CWmainWin()
-        #self.UI = uic.loadUi("MorseTrain.ui")
         uic.loadUi("MorseTrain.ui", self)
-        #self.UI.setupUi(self)
         self.show()
 
-        #self.resize(830, 640)
+        menuBar = self.menuBar()
+        actionFile = menuBar.addMenu("Communications")
+        commPortAction = QAction('Arduino Comm Path', self)
+        commPortAction.triggered.connect(self.userArduinoCommSetup)
+        actionFile.addAction(commPortAction)
+        actionLoremIpsum = menuBar.addMenu("Lorem Ipsum")
+        lorumIpsumAction = QAction('Lorem Ipsum', self)
+        lorumIpsumAction.triggered.connect(self.LoremIpsumMsg)
+        actionLoremIpsum.addAction(lorumIpsumAction)
 
         self.ConsumerEnabled = True
 
@@ -99,9 +204,31 @@ class MainWindow(QMainWindow):
         self.msgXmitQueue = Queue()
         self.morseAnalyzerQueue = Queue()
 
+        # setup serial communications skeleton
         self.SerialComm = XmitRcvUART(self.msgXmitQueue, self.msgRcvQueue)
-        self.SerialComm.startrcv()
-        self.SerialComm.startxmit()
+
+        if self.readConfigFile():
+            if self.commMethodInUse == "WiFi":
+                print("using WiFi")
+            elif self.commMethodInUse == "Serial":
+                print("Using Serial")
+                # setup serial port settings and queue interface.But not open yet.
+                self.initSerialCommunication()
+            else:
+                self.userArduinoCommSetup()
+        else:
+            self.userArduinoCommSetup()
+
+        self.writeConfigFile()
+
+        if (self.commMethodInUse == "Serial"):
+            port = self.serialPortInUse
+        else:
+            port = self.wifiInUse
+
+        MainWindow.setWindowTitle(self,"KG7IFO CW Practice Trainer/Fist analyzer -- Comm: {0:s}/{1:s}".format(self.commMethodInUse, port))
+
+        self.show()
 
         self.pushButtonPlay.clicked.connect(self.playMorseText)
         self.pushButtonLoad.clicked.connect(self.loadPlayMorseText)
@@ -137,6 +264,109 @@ class MainWindow(QMainWindow):
         self.consumerDaemon = Consumer(self.msgRcvQueue)
         self.consumerDaemon.updateMorseMsg.connect(self.ProcessReceived)
         self.consumerDaemon.startRCV()
+
+    def setupArduinoComm(self):
+
+        configFilePath = os.path.join(self.parentDirectory, "Config.cfg")
+        try:
+            configFile = open(configFilePath, "rt")
+        except:
+            print("No configuration file.")
+            self.userArduinoCommSetup()
+        else:
+            print("found config file.  Congratulations.")
+
+    def userArduinoCommSetup(self):
+        dlg = arduinoCommPath()
+        dlg.exec()
+        selectedPath = dlg.getSelected()
+        if (selectedPath == "serial"):
+            print("setup Serial")
+            userPort = self.userSetSerialPort()
+            if userPort == "":
+                print("User picked no port.")
+                self.close()
+            else:
+                self.serialPortInUse = userPort
+                self.commMethodInUse = "Serial"
+                if not self.initSerialCommunication():
+                    print("Could not open comm port")
+                    self.close()
+
+        elif (selectedPath == "wifi"):
+            print("setup WiFi")
+        else:
+            print("no communications.")
+            self.close()
+
+    def initSerialCommunication(self):
+        self.SerialComm.setSerialPort(self.serialPortInUse)
+        try:
+            self.SerialComm.openSerialPort()
+        except:
+            return False
+        else:
+            self.SerialComm.startrcv()
+            self.SerialComm.startxmit()
+            return True
+
+    def userSetSerialPort(self):
+        if self.SerialComm.getInUse():
+            self.SerialComm.closePort()
+        dlg = serialCommPortDialog()
+        returnedPort = ""
+        if dlg.exec():
+            print("Success")
+            returnedPort = dlg.getCurrentItem()
+        else:
+            print("Failure")
+        print("Serial port = {0:s}".format(returnedPort))
+        return returnedPort
+
+    def readConfigFile(self):
+        configFilePath = os.path.join(self.parentDirectory, "Config.cfg")
+        try:
+            configFile = open(configFilePath, "rt")
+        except:
+            print("No configuration file.")
+            return False
+        else:
+            cfg = configFile.readlines()
+            configFile.close()
+            try:
+                self.commMethodInUse = cfg[0].strip('\n')
+                self.serialPortInUse = cfg[1].strip('\n')
+                self.wifiInUse = cfg[2].strip('\n')
+            except:
+                return False
+            else:
+                return True
+
+    def writeConfigFile(self):
+        configFilePath = os.path.join(self.parentDirectory, "Config.cfg")
+        try:
+            configFile = open(configFilePath, "wt")
+        except:
+            print("Unwritable configuration file.")
+            msgBox = QMessageBox()
+            msgBox.setText("Can not write configuration file.")
+            msgBox.setWindowTitle("Abandon all hope.")
+            msgBox.exec()
+        else:
+            configFile.write(self.commMethodInUse+"\n")
+            configFile.write(self.serialPortInUse+"\n")
+            configFile.write(self.wifiInUse+"\n")
+            configFile.close()
+
+
+
+    def LoremIpsumMsg(self):
+        print("Lorem Ipsum")
+        msgBox = QMessageBox()
+        msgBox.setText(LoremIpsumText)
+        msgBox.setWindowTitle("Lorem Ipsum")
+        msgBox.exec()
+# ==== end of menu bar handlers
 
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.Type.Leave:
@@ -325,6 +555,6 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication([])
     window = MainWindow()
-    window.setWindowTitle("KG7IFO CW Practice Trainer/Fist analyzer")
-    window.show()
+    #window.setWindowTitle("KG7IFO CW Practice Trainer/Fist analyzer - development")
+    #window.show()
     sys.exit(app.exec())

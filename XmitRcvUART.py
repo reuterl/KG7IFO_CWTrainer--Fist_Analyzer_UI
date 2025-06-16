@@ -10,16 +10,34 @@ import platform
 
 class XmitRcvUART():
     def __init__(self, msgXmitQueue, MsgRcvQueue):
-        if platform.system() == "Windows":
-            self.serialPort = "COM6"
-        else:
-            self.serialPort = "/dev/ttyUSB0"
+#            self.serialPort = "/dev/ttyUSB0"
+
+        self.inUse = False
 
         self.baud = 9600
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
         self.bytesize = serial.EIGHTBITS
 
+        # Daemonic threads die automatically at main thread exit
+        self.xmitThread = Thread(target=self.UARTsend)
+        self.xmitThread.daemon = True
+
+        self.rcvThread = Thread(target=self.UARTreceive)
+        self.rcvThread.daemon = True
+
+        self.msg = []
+
+        # Send and receive queues between threads and mainline
+        self.msgXmitQueue = msgXmitQueue
+        self.MsgRcvQueue = MsgRcvQueue
+        self.mde = machine_detat(self.MsgRcvQueue)
+        self.enabled = True
+
+    def setSerialPort(self, port):
+        self.serialPort = port
+
+    def openSerialPort(self):
         self.serialPort = serial.Serial(
             port=self.serialPort,
             dsrdtr=False,
@@ -29,17 +47,10 @@ class XmitRcvUART():
             stopbits=self.stopbits,
             bytesize=self.bytesize
         )
-        # Daemonic threads die automatically at main thread exit
-        self.xmitThread = Thread(target=self.UARTsend)
-        self.xmitThread.daemon = True
-        self.rcvThread = Thread(target=self.UARTreceive)
-        self.rcvThread.daemon = True
-        self.msg = []
+        self.inUse = True
 
-        self.msgXmitQueue = msgXmitQueue
-        self.MsgRcvQueue = MsgRcvQueue
-        self.mde = machine_detat(self.MsgRcvQueue)
-        self.enabled = True
+    def getInUse(self):
+        return self.inUse
 
     def __del__(self):
         byte = self.serialPort.close()
@@ -60,8 +71,8 @@ class XmitRcvUART():
                 st = bytebyte.decode("utf-8")
             except:
                 st = "?"
-            print("Recieve byte = 0x{:02X} [{}]".format(byte, st))
-            # print("Recieve byte = {:02X}".format(byte))
+            #print("Receive byte = 0x{:02X} [{}]".format(byte, st))
+            # print("Receive byte = {:02X}".format(byte))
             self.mde.msgParser(byte)
 
         print("Rcv task complete.")
@@ -83,6 +94,8 @@ class XmitRcvUART():
 
     def closePort(self):
         self.serialPort.close()
+        self.inUse = False
+        self.disbleXmtRcv()
         print("Serial Port Closed.")
 
     def disbleXmtRcv(self):
