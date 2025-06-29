@@ -63,7 +63,7 @@ class morseAnalyzerDialog(QDialog):
 
         for x in range(MCT.getLengthSeq()):
             morseCharElement = MCT.getMorseElement(x)
-            print(morseCharElement.getMorseElement(), morseCharElement.getDuration())
+            #print(morseCharElement.getMorseElement(), morseCharElement.getDuration())
             self.outerlayout.addWidget(self.displayElement(morseCharElement.getMorseElement(), morseCharElement.getDuration(), float(morseCharElement.getDuration())/fTdit))
 
         self.anotherLayout.addWidget(self.morseCharLabel, 1, 1)

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>841</width>
+    <width>864</width>
     <height>701</height>
    </rect>
   </property>
@@ -118,240 +118,415 @@
    <string notr="true">background-color: rgb(170, 255, 255);</string>
   </property>
   <property name="tabShape">
-   <enum>QTabWidget::Rounded</enum>
+   <enum>QTabWidget::Triangular</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="">
+   <widget class="QGroupBox" name="groupBoxKeyInput">
     <property name="geometry">
      <rect>
-      <x>11</x>
-      <y>50</y>
-      <width>636</width>
-      <height>499</height>
+      <x>40</x>
+      <y>280</y>
+      <width>811</width>
+      <height>301</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Play message</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0" rowspan="3" colspan="2">
-      <widget class="QPlainTextEdit" name="plainTextEdit">
-       <property name="styleSheet">
-        <string notr="true">
-background-color: rgb(85, 255, 255);</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="pushButtonLoad">
-       <property name="text">
-        <string>Load</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="pushButtonClearPlay">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 0);</string>
-       </property>
-       <property name="text">
-        <string>Clear</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QGroupBox" name="groupBox">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(85, 255, 255);</string>
-       </property>
-       <property name="title">
-        <string>Play Message</string>
-       </property>
-       <widget class="QPushButton" name="pushButtonPlay">
-        <property name="geometry">
-         <rect>
-          <x>11</x>
-          <y>27</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(0, 170, 0);</string>
-        </property>
-        <property name="text">
-         <string>Play</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="labelWPM">
-        <property name="geometry">
-         <rect>
-          <x>11</x>
-          <y>57</y>
-          <width>29</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>WPM</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="pushButtonStop">
-        <property name="geometry">
-         <rect>
-          <x>11</x>
-          <y>105</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(255, 0, 0);</string>
-        </property>
-        <property name="text">
-         <string>Stop!</string>
-        </property>
-       </widget>
-       <widget class="QComboBox" name="comboBoxWPM">
-        <property name="geometry">
-         <rect>
-          <x>11</x>
-          <y>79</y>
-          <width>66</width>
-          <height>20</height>
-         </rect>
-        </property>
-       </widget>
-      </widget>
-     </item>
-     <item row="4" column="0" rowspan="2">
-      <widget class="QLabel" name="labelKeyInput">
-       <property name="text">
-        <string>Key Input</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QToolButton" name="toolButtonPlayBack">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 0);</string>
-       </property>
-       <property name="text">
-        <string>play Back</string>
-       </property>
-       <property name="arrowType">
-        <enum>Qt::UpArrow</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="label_6">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 127);</string>
-       </property>
-       <property name="text">
-        <string>Play Back</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0" colspan="2">
-      <widget class="QPlainTextEdit" name="morseTextEdit">
-       <property name="styleSheet">
-        <string notr="true">
+    <property name="title">
+     <string>Key Input</string>
+    </property>
+    <widget class="QGroupBox" name="groupBoxResults">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>131</width>
+       <height>131</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Results</string>
+     </property>
+     <widget class="QLineEdit" name="lineEditScore">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>50</y>
+        <width>64</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Score (Avg.)</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEditWPM">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>20</y>
+        <width>64</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>WPM (Avg.)</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBoxSettings">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>110</y>
+       <width>221</width>
+       <height>192</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Settings</string>
+     </property>
+     <widget class="QCheckBox" name="checkBoxFarnsworth">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>110</y>
+        <width>127</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Farnsworth Spacing</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonSideTone">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>75</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Set</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEditSideTone">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>40</y>
+        <width>116</width>
+        <height>22</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>10</y>
+        <width>82</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font: 9pt &quot;Segoe Fluent Icons&quot;;</string>
+      </property>
+      <property name="text">
+       <string>Side Tone (Hz)</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>110</x>
+        <y>70</y>
+        <width>67</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>100 - 1000Hz</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QPlainTextEdit" name="morseTextEdit">
+     <property name="geometry">
+      <rect>
+       <x>415</x>
+       <y>30</y>
+       <width>371</width>
+       <height>251</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
 
 background-color: rgb(85, 170, 255);</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="2">
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLineEdit" name="lineEditWPM"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>WPM (Avg.)</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QLineEdit" name="lineEditScore"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Score (Avg.)</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QPushButton" name="pushButtonClear">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(255, 255, 0);</string>
-           </property>
-           <property name="text">
-            <string>Clear</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxFarnsworth">
-           <property name="text">
-            <string>Farnsworth Spacing</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </item>
-     <item row="7" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QPushButton" name="pushButtonSideTone">
-         <property name="text">
-          <string>Set</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>100 - 1000Hz</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="lineEditSideTone"/>
-       </item>
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="styleSheet">
-          <string notr="true">font: 9pt &quot;Segoe Fluent Icons&quot;;</string>
-         </property>
-         <property name="text">
-          <string>Side Tone (Hz)</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>5</number>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonClear">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>70</y>
+       <width>75</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 0);</string>
+     </property>
+     <property name="text">
+      <string>Clear</string>
+     </property>
+    </widget>
+    <widget class="QToolButton" name="toolButtonPlayBack">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>20</y>
+       <width>26</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 0);</string>
+     </property>
+     <property name="text">
+      <string>play Back</string>
+     </property>
+     <property name="arrowType">
+      <enum>Qt::UpArrow</enum>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>30</y>
+       <width>50</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 127);</string>
+     </property>
+     <property name="text">
+      <string>Play Back</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>50</y>
+      <width>811</width>
+      <height>231</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(85, 255, 255);</string>
+    </property>
+    <property name="title">
+     <string>Play Message</string>
+    </property>
+    <widget class="QPushButton" name="pushButtonPlay">
+     <property name="geometry">
+      <rect>
+       <x>11</x>
+       <y>27</y>
+       <width>75</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(0, 170, 0);</string>
+     </property>
+     <property name="text">
+      <string>Play</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelWPM">
+     <property name="geometry">
+      <rect>
+       <x>11</x>
+       <y>57</y>
+       <width>29</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>WPM</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonStop">
+     <property name="geometry">
+      <rect>
+       <x>11</x>
+       <y>105</y>
+       <width>75</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 0, 0);</string>
+     </property>
+     <property name="text">
+      <string>Stop!</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="comboBoxWPM">
+     <property name="geometry">
+      <rect>
+       <x>11</x>
+       <y>79</y>
+       <width>66</width>
+       <height>20</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="groupBoxListen">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>60</y>
+       <width>141</width>
+       <height>111</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Listening Practice</string>
+     </property>
+     <widget class="QPushButton" name="pushButtonActivateListening">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>120</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(0, 170, 0);</string>
+      </property>
+      <property name="text">
+       <string>Activate</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonReveal">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>72</y>
+        <width>120</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
+      <property name="text">
+       <string>Reveal</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButtonRandomPhrase">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>46</y>
+        <width>120</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">
+background-color: rgb(214, 214, 214);</string>
+      </property>
+      <property name="text">
+       <string>Load Random Phrase</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QPlainTextEdit" name="plainTextEdit">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>10</y>
+       <width>511</width>
+       <height>211</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+background-color: rgb(170, 0, 255);</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonLoad">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>30</y>
+       <width>75</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Load</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonClearPlay">
+     <property name="geometry">
+      <rect>
+       <x>190</x>
+       <y>30</y>
+       <width>75</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 255, 0);</string>
+     </property>
+     <property name="text">
+      <string>Clear</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -359,7 +534,7 @@ background-color: rgb(85, 170, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>841</width>
+     <width>864</width>
      <height>22</height>
     </rect>
    </property>

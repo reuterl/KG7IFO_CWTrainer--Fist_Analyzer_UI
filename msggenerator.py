@@ -16,8 +16,10 @@ SerialCmdCode = {'addTone': 0xC0,
 
                  'receivetextchar': 0xF0,
 
-                 'sendConfig': 0xA0
+                 'sendConfig': 0xA0,
+                 'ping': 0xAA
                  }
+
 class prosignTable:
     def __init__(self):
         self.prosign = ["AA", "AR", "AS", "BT", "CQ", "CT", "EE", "IMI", "KN", "SK", "SN", "SOS"]
@@ -430,6 +432,7 @@ class morseCharSeqEntry():
 
     def getDuration(self):
         return self.Duration
+
 class morseCharToken(morseCharSeqEntry):
     def __init__(self, Tdit, valid, prosign, farnsworth):
         self.Tdit = Tdit
@@ -545,3 +548,31 @@ class ReceiveTextChar( morseCharToken, bitbash):
 
     def getValid(self):
         return self.valid
+
+class ping(morseCharToken, bitbash):
+    def __init__(self):
+        self.Length = 8
+        self.msg = self.initMsg(self.Length)
+        self.cmmdCode = SerialCmdCode.get('ping')
+        self.receivedChecksum = 0
+        self.payload = 0
+
+    def rcvPing(self, msg):
+        self.msg = msg.copy()
+        self.Length = self.msg[2]
+        self.cmmdCode = self.msg[3]
+        self.receivedChecksum = (msg[self.Length - 2] << 8) | msg[self.Length - 1]
+        self.payload = self.decode16(self.msg, 4)
+
+    # send back verbatum
+    def echoPing(self):
+        return self.msg
+
+    def newPing(self, payload):
+        self.Length = 8
+        self.msg = self.initMsg(self.Length)
+        self.cmmdCode = SerialCmdCode.get('ping')
+        self.msg[3] = self.cmmdCode
+        self.payload = payload
+        self.encode16(self.msg, 4, payload)
+        CzeckSum(self.msg)

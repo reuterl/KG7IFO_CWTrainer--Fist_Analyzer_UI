@@ -5,7 +5,8 @@
 import sys
 import glob
 import os
-#import signal
+import random
+
 # to find execution script directory
 from inspect import currentframe, getframeinfo
 from pathlib import Path
@@ -16,17 +17,21 @@ from PyQt6.QtGui import QDoubleValidator, QPixmap, QCursor, QTextCursor, QAction
 from PyQt6 import QtGui, QtCore, Qt6, uic
 from threading import Thread
 from XmitRcvUART import XmitRcvUART
+
 from msggenerator import (SendMorseMsg,
                           PlayMorseMsg,
                           SendSideTone,
                           bitbash,
+                          SerialCmdCode,
                           ReceiveTextChar,
                           prosignTable,
                           StopMorseMsg,
                           morseCharToken,
                           SendFarnsworth,
                           morseCharSeqEntry,
-                          morseElementenum)
+                          morseElementenum,
+                          ping)
+
 from queue import Empty, Queue
 #from MorseTrain import Ui_CWmainWin
 from morseAnalyzerDialog import morseAnalyzerDialog
@@ -180,7 +185,8 @@ class MainWindow(QMainWindow):
         self.parentDirectory = Path(filename).resolve().parent
 
         self.serialPortInUse = "TBD-Serial"
-        self.wifiInUse = "TBD-WiFi"
+        self.wifiIpInUse = "TBD-WiFi-IP"
+        self.wifiPortInUse = "TBD-WiFi-Port"
         self.commMethodInUse = "TBD"
 
         self.prosignList = prosignTable()
@@ -206,10 +212,12 @@ class MainWindow(QMainWindow):
 
         # setup serial communications skeleton
         self.SerialComm = XmitRcvUART(self.msgXmitQueue, self.msgRcvQueue)
+        self.SerialComm.startxmit()
 
         if self.readConfigFile():
             if self.commMethodInUse == "WiFi":
                 print("using WiFi")
+                self.initWiFiCommunications()
             elif self.commMethodInUse == "Serial":
                 print("Using Serial")
                 # setup serial port settings and queue interface.But not open yet.
@@ -219,12 +227,14 @@ class MainWindow(QMainWindow):
         else:
             self.userArduinoCommSetup()
 
+        self.SerialComm.startrcv()
+
         self.writeConfigFile()
 
         if (self.commMethodInUse == "Serial"):
             port = self.serialPortInUse
         else:
-            port = self.wifiInUse
+            port = self.wifiIpInUse+":"+self.wifiPortInUse
 
         MainWindow.setWindowTitle(self,"KG7IFO CW Practice Trainer/Fist analyzer -- Comm: {0:s}/{1:s}".format(self.commMethodInUse, port))
 
@@ -235,6 +245,19 @@ class MainWindow(QMainWindow):
         self.pushButtonClear.clicked.connect(self.clearMorseText)
         self.pushButtonSideTone.clicked.connect(self.handlepushButtonSideTone)
         self.pushButtonStop.clicked.connect(self.handlepushButtonStop)
+
+        self.pushButtonActivateListening.clicked.connect(self.activateListening)
+        self.pushButtonRandomPhrase.clicked.connect(self.loadRandomPhrase)
+        self.pushButtonReveal.clicked.connect(self.revealSecret)
+        self.pushButtonReveal.setEnabled(False)
+        self.pushButtonRandomPhrase.setEnabled(False)
+        self.pushButtonActivateListening.setStyleSheet("background-color: #00AA00")
+        self.pushButtonRandomPhrase.setStyleSheet("background-color: #D6D6D6")
+        self.pushButtonReveal.setStyleSheet("background-color: #D6D6D6")
+        self.listeningPracticeActive = False
+        self.listeningPracticeFile = None
+        self.listenList = []
+        self.listenPracticetxt = ""
 
         self.morseTextEdit.mousePressEvent = self.ThemousePressEvent
         self.morseTextEdit.mouseReleaseEvent = self.ThemouseReleaseEvent
@@ -259,6 +282,7 @@ class MainWindow(QMainWindow):
         self.lineEditWPM.setText("0")
         self.charctersReceived = 0
         self.morseTextPosition = 0
+        self.analyzeDialogActive = False
 
         # create a consumer thread and start it
         self.consumerDaemon = Consumer(self.msgRcvQueue)
@@ -295,9 +319,14 @@ class MainWindow(QMainWindow):
 
         elif (selectedPath == "wifi"):
             print("setup WiFi")
+            self.initWiFiCommunications()
         else:
             print("no communications.")
             self.close()
+
+    def initWiFiCommunications(self):
+        self.SerialComm.openUDP()
+        self.sendPingtoArduino()
 
     def initSerialCommunication(self):
         self.SerialComm.setSerialPort(self.serialPortInUse)
@@ -306,8 +335,6 @@ class MainWindow(QMainWindow):
         except:
             return False
         else:
-            self.SerialComm.startrcv()
-            self.SerialComm.startxmit()
             return True
 
     def userSetSerialPort(self):
@@ -336,7 +363,8 @@ class MainWindow(QMainWindow):
             try:
                 self.commMethodInUse = cfg[0].strip('\n')
                 self.serialPortInUse = cfg[1].strip('\n')
-                self.wifiInUse = cfg[2].strip('\n')
+                self.wifiIpInUse = cfg[2].strip('\n')
+                self.wifiPortInUse = cfg[3].strip('\n')
             except:
                 return False
             else:
@@ -344,6 +372,7 @@ class MainWindow(QMainWindow):
 
     def writeConfigFile(self):
         configFilePath = os.path.join(self.parentDirectory, "Config.cfg")
+        print("write config file: {0:s}\n".format(configFilePath))
         try:
             configFile = open(configFilePath, "wt")
         except:
@@ -355,7 +384,8 @@ class MainWindow(QMainWindow):
         else:
             configFile.write(self.commMethodInUse+"\n")
             configFile.write(self.serialPortInUse+"\n")
-            configFile.write(self.wifiInUse+"\n")
+            configFile.write(self.wifiIpInUse+"\n")
+            configFile.write(self.wifiPortInUse+"\n")
             configFile.close()
 
 
@@ -374,16 +404,13 @@ class MainWindow(QMainWindow):
                 self.pushButtonSideTone.setDisabled(False)
         return False
 
-    def leaf(self):
-        print("--EventFilter--")
-        if self.lineEditSideTone.hasAcceptableInput():
-            self.pushButtonSideTone.setDisabled(False)
-
     def ThemousePressEvent(self, e):
         print(">>>mousePressEvent<<<")
         if e.button() == QtCore.Qt.MouseButton.LeftButton:
-            print("Mouse text cursor position", self.morseTextEdit.cursorForPosition(e.pos()).position())
+            #print("Mouse text cursor position", self.morseTextEdit.cursorForPosition(e.pos()).position())
             textPosition = self.morseTextEdit.cursorForPosition(e.pos()).position()
+            #print("textPosition = ", textPosition)
+            #print("Length morseTextStream = {0:d}".format(len(self.morseTextStream)))
             if len(self.morseTextStream) != 0:
                 for MCT in self.morseTextStream:
                     if (textPosition >= MCT.getEditTextIdxStart()) and (textPosition <= MCT.getEditTextIdxEnd()):
@@ -396,15 +423,19 @@ class MainWindow(QMainWindow):
 
     def ThemouseReleaseEvent(self, e):
         print("<<<<mouseReleseEvent>>>>")
-        self.analyzeDialog.close()
+        if self.analyzeDialogActive:
+            self.analyzeDialog.close()
+            self.analyzeDialogActive = False
 
     def closeEvent(self, event):
         self.killConsumer()
         event.accept()
 
     def xeqMorseAnalyzerDialog(self):
+        #print("xeqMorseAnalyzerDialog, idxMorseTextStream = ", self.idxMorseTextStream)
         self.analyzeDialog = morseAnalyzerDialog(self.idxMorseTextStream)
         self.analyzeDialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+        self.analyzeDialogActive = True
         self.analyzeDialog.exec()
 
     def handlecheckBoxFarnsworth(self):
@@ -428,11 +459,12 @@ class MainWindow(QMainWindow):
         print('Consumer killed')
 
     def ProcessReceived(self, msg):
-        if msg[3] == 0xF0:
+        if msg[3] == SerialCmdCode.get('receivetextchar'):
             self.ProcessReceiveTextChar(msg)
+        if msg[3] == SerialCmdCode.get('ping'):
+            self.echoPingCmmd(msg)
 
     def ProcessReceiveTextChar(self, msg):
-
         try:
             RTC = ReceiveTextChar(msg)
             MCT = RTC.getMorseCharToken()
@@ -442,25 +474,33 @@ class MainWindow(QMainWindow):
 
         self.morseTextEdit.moveCursor(QtGui.QTextCursor.MoveOperation.End, QtGui.QTextCursor.MoveMode.MoveAnchor)
 
-        MCT.setEditTextIdxStart(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position())
-
         if MCT.prosign:
             print("Prosign")
             prosignIdx = MCT.getMorsePro()
             morseChar = '\\' + self.prosignList.prosign[prosignIdx]
-            MCT.setEditTextIdxEnd(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position()+len(morseChar)-1)
         else:
             if MCT.valid:
                 morseChar = MCT.getMorseChar()
             else:
-                morseChar = chr(0xBF)
+                morseChar = '&' #chr(0xBF)
 
-            MCT.setEditTextIdxEnd(self.morseTextEdit.cursorForPosition(self.morseTextEdit.pos()).position())
+
         self.morseTextEdit.insertPlainText(morseChar)
+
+        # Get the string index of the latest character. This corresponds to the
+        # index mouse cursor position returns when clicking on a specific letter.
+        # note that newlines, \n, are embedded as well and count against the position.
+        windowContents = self.morseTextEdit.toPlainText()
+        startPos = len(windowContents)-1
+        endPos = startPos+ (len(morseChar)-1)
+        MCT.setEditTextIdxStart(startPos)
+        MCT.setEditTextIdxEnd(endPos)
+
+        #print("MCT text char = [{0:s}] pos = ({1:d}, {2:d})".format(morseChar, startPos, endPos))
         if MCT.getSpaceAfter():
             self.morseTextEdit.insertPlainText(" ")
         if MCT.getIdleAfter():
-            self.morseTextEdit.insertPlainText("\r\n")
+            self.morseTextEdit.insertPlainText("\n")
         try:
             self.morseTextStream.append(MCT)
         except Exception as e:
@@ -535,7 +575,7 @@ class MainWindow(QMainWindow):
         self.morseTextPosition = 0
 
     def loadPlayMorseText(self):
-        txt = self.plainTextEdit.toPlainText()
+        txt = self.plainTextEdit.toPlainText().replace('\n', "  ")
         SMM = SendMorseMsg(txt)
         self.msgXmitQueue.put(SMM.getMsg())
 
@@ -545,16 +585,72 @@ class MainWindow(QMainWindow):
         self.msgXmitQueue.put(PMM.getMsg())
 
     def handlepushButtonSideTone(self):
-        print("pushButtonSideTone")
+        #print("pushButtonSideTone")
         sidetone = self.editToFloat(self.lineEditSideTone.text())
         SST = SendSideTone(sidetone)
         self.msgXmitQueue.put(SST.getMsg())
+
+    def sendPingtoArduino(self):
+        pingMsg = ping()
+        pingMsg.newPing(2390)
+        self.msgXmitQueue.put(pingMsg.getMsg())
+
+    # wrap-around ping command
+    def echoPingCmmd(self, msg):
+        pingMsg = ping()
+        pingMsg.rcvPing(msg)
+        self.msgXmitQueue.put(pingMsg.getMsg())
+
+    def activateListening(self):
+        #print("activateListening")
+        if self.listeningPracticeActive:
+            self.listeningPracticeActive = False
+            self.pushButtonReveal.setEnabled(False)
+            self.pushButtonRandomPhrase.setEnabled(False)
+            self.pushButtonActivateListening.setStyleSheet("background-color: #00AA00")
+            self.pushButtonRandomPhrase.setStyleSheet("background-color: #D6D6D6")
+            self.pushButtonReveal.setStyleSheet("background-color: #D6D6D6")
+        else:
+            if self.readListeningPracticeFile():
+                self.listeningPracticeActive = True
+                self.pushButtonReveal.setEnabled(True)
+                self.pushButtonRandomPhrase.setEnabled(True)
+                self.pushButtonRandomPhrase.setStyleSheet("background-color: #00AA00")
+                self.pushButtonReveal.setStyleSheet("background-color: #00AA00")
+                self.pushButtonActivateListening.setStyleSheet("background-color: #ff0000")
+                self.readListeningPracticeFile()
+
+    def loadRandomPhrase(self):
+        number = random.randint(0, len(self.listenList)-1)
+        self.listenPracticetxt = self.listenList[number].strip('\n')
+        self.plainTextEdit.setPlainText("".ljust(len(self.listenPracticetxt),'?'))
+        SMM = SendMorseMsg(self.listenPracticetxt)
+        self.msgXmitQueue.put(SMM.getMsg())
+
+        #print("loadRandomPhrase")
+        #print("Random Phrase = {0:s}\n".format(self.listenList[number]))
+
+    def revealSecret(self):
+        self.plainTextEdit.setPlainText(self.listenPracticetxt)
+        #print("revealSecret")
+
+
+    def readListeningPracticeFile(self):
+        configFilePath = os.path.join(self.parentDirectory, "ListeningPractice.txt")
+        try:
+            self.listeningPracticeFile = open(configFilePath, "rt")
+        except:
+            print("No Listening Practice file.")
+            return False
+        else:
+            self.listenList = self.listeningPracticeFile.readlines()
+            self.listeningPracticeFile.close()
+        return True
+
 # =====================================================================================================================
 
 
 if __name__ == '__main__':
     app = QApplication([])
     window = MainWindow()
-    #window.setWindowTitle("KG7IFO CW Practice Trainer/Fist analyzer - development")
-    #window.show()
     sys.exit(app.exec())
