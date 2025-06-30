@@ -49,16 +49,20 @@ class morseAnalyzerDialog(QDialog):
         self.scoreLabel.setText("Score = {0:d}".format(MCT.getScore()))
 
         self.morseCharLabel = QLabel()
+        self.morseCharHexLabel = QLabel()
         if MCT.isProsign():
             morseProIdx = MCT.getMorsePro()
             morsePro = '\\' + self.prosignList.prosign[morseProIdx]
             self.morseCharLabel.setText("Prosign = '{0:s}'".format(morsePro))
+            self.morseCharHexLabel.setText("")
         else:
             if MCT.valid:
                 morseChar = MCT.getMorseChar()
             else:
                 morseChar = chr(0xBF)
             self.morseCharLabel.setText("Char = '{0:s}'".format(morseChar))
+            self.morseCharHexLabel.setText("0x{0:02X}".format(ord(morseChar[0])))
+            self.morseCharHexLabel.setFont(self.myFont)
         self.morseCharLabel.setFont(self.myFont)
 
         for x in range(MCT.getLengthSeq()):
@@ -67,6 +71,7 @@ class morseAnalyzerDialog(QDialog):
             self.outerlayout.addWidget(self.displayElement(morseCharElement.getMorseElement(), morseCharElement.getDuration(), float(morseCharElement.getDuration())/fTdit))
 
         self.anotherLayout.addWidget(self.morseCharLabel, 1, 1)
+        self.anotherLayout.addWidget(self.morseCharHexLabel, 1, 2)
         self.anotherLayout.addWidget(self.TditLabel, 1, 3)
         self.anotherLayout.addLayout(self.outerlayout, 2, 1, 1, 3)
         self.anotherLayout.addWidget(self.wpmLabel, 3, 1)
