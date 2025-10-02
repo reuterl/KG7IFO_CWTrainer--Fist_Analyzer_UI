@@ -245,6 +245,8 @@ class MainWindow(QMainWindow):
         self.pushButtonClear.clicked.connect(self.clearMorseText)
         self.pushButtonSideTone.clicked.connect(self.handlepushButtonSideTone)
         self.pushButtonStop.clicked.connect(self.handlepushButtonStop)
+        self.pushButtonSaveSession.clicked.connect(self.savePracticeSession)
+        self.pushButtonLoadSession.clicked.connect(self.loadPracticeSession)
 
         self.pushButtonActivateListening.clicked.connect(self.activateListening)
         self.pushButtonRandomPhrase.clicked.connect(self.loadRandomPhrase)
@@ -482,9 +484,10 @@ class MainWindow(QMainWindow):
             if MCT.valid:
                 morseChar = MCT.getMorseChar()
             else:
-                morseChar = '&' #chr(0xBF)
-
-
+                morseChar = '*'
+                #self.morseTextEdit.appendHtml("<p style=\"color:yellow;white-space:pre\">" + "*" + "</p>")
+                #self.morseTextEdit.appendHtml("<p style=\"color:black;white-space:pre\"></p>")
+                #self.morseTextEdit.moveCursor(QTextCursor.MoveOperation.End)
         self.morseTextEdit.insertPlainText(morseChar)
 
         # Get the string index of the latest character. This corresponds to the
@@ -506,6 +509,37 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print("can not append: ", e)
 
+    def loadPracticeSession(self):
+        print("Loading saved keyed session from file")
+
+    def savePracticeSession(self):
+        print("Saving keyed session to file")
+        saveSessionFilePath = os.path.join(self.parentDirectory, "SaveSession.cvs")
+        print("write config file: {0:s}\n".format(saveSessionFilePath))
+        try:
+            saveSessionFile = open(saveSessionFilePath, "wt")
+        except:
+            print("Unwritable configuration file.")
+            msgBox = QMessageBox()
+            msgBox.setText("Can not write configuration file.")
+            msgBox.setWindowTitle("Abandon all hope.")
+            msgBox.exec()
+        else:
+            for morseChar in self.morseTextStream:
+                print (morseChar.getMorseChar())
+                saveSessionFile.write("CW 0, ")
+                saveSessionFile.write(morseChar.getMorseChar()+", ")
+                saveSessionFile.write(str(morseChar.getTdit())+", ")
+                saveSessionFile.write(str(morseChar.getWPM())+", ")
+                saveSessionFile.write(str(morseChar.getScore())+", ")
+                saveSessionFile.write(str(morseChar.getMorsePro())+", ")
+                saveSessionFile.write(str(morseChar.getValid())+", ")
+                saveSessionFile.write(str(morseChar.getLengthSeq())+", ")
+                saveSessionFile.write(str(morseChar.getFarnsworth())+", ")
+                saveSessionFile.write(str(morseChar.getSpaceAfter())+", ")
+                saveSessionFile.write(str(morseChar.getIdleAfter())+", ")
+                saveSessionFile.write("\n")
+            saveSessionFile.close()
 
     def evaluateMorseCharacter(self, MCT):
         #
@@ -542,7 +576,7 @@ class MainWindow(QMainWindow):
             runningWPM += WPM
             self.lineEditWPM.setText("{0:d}".format(int((runningWPM/2.0)+0.5)))
         #
-        # Score
+        # Score (still to come)
         #
         scoreAwarded = 5
         self.lineEditScore.setText("{0:d}".format(scoreAwarded))
@@ -564,6 +598,8 @@ class MainWindow(QMainWindow):
 
     def clearMorseTextPlay(self):
         self.plainTextEdit.setPlainText("")
+        SMM = SendMorseMsg("")
+        self.msgXmitQueue.put(SMM.getMsg())
 
     def clearMorseText(self):
         self.morseTextEdit.setPlainText("")

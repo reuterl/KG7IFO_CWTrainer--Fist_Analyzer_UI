@@ -36,6 +36,11 @@ class morseAnalyzerDialog(QDialog):
         self.myFont = QFont('Ariel', 15)
         self.myFont.setBold(True)
 
+        self.invalidFont = QFont('Ariel', 15)
+        self.invalidFont.setBold(True)
+        self.invalidPalette = self.palette()
+        self.invalidPalette.setColor(self.foregroundRole(), QColor("red"))
+
         self.anotherFont = QFont('Ariel', 12)
         self.anotherFont.setBold(False)
 
@@ -56,13 +61,16 @@ class morseAnalyzerDialog(QDialog):
             self.morseCharLabel.setText("Prosign = '{0:s}'".format(morsePro))
             self.morseCharHexLabel.setText("")
         else:
+            morseChar = MCT.getMorseChar()
             if MCT.valid:
-                morseChar = MCT.getMorseChar()
+                self.morseCharLabel.setText("Char = '{0:s}'".format(morseChar))
             else:
-                morseChar = chr(0xBF)
-            self.morseCharLabel.setText("Char = '{0:s}'".format(morseChar))
+                self.morseCharLabel.setText("Char = '*'")
+                self.morseCharLabel.setPalette(self.invalidPalette)
+
             self.morseCharHexLabel.setText("0x{0:02X}".format(ord(morseChar[0])))
             self.morseCharHexLabel.setFont(self.myFont)
+
         self.morseCharLabel.setFont(self.myFont)
 
         for x in range(MCT.getLengthSeq()):

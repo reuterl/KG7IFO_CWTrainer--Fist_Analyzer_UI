@@ -450,6 +450,9 @@ class morseCharToken(morseCharSeqEntry):
         self.wordspaceAfter = False
         self.idleAfter = False
 
+    def getValid(self):
+        return self.valid
+
     def getIdleAfter(self):
         return self.idleAfter
 
