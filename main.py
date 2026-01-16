@@ -26,6 +26,7 @@ from msggenerator import (SendMorseMsg,
                           bitbash,
                           SerialCmdCode,
                           ReceiveTextChar,
+                          uploadRunningWPM,
                           prosignTable,
                           StopMorseMsg,
                           morseCharToken,
@@ -278,6 +279,8 @@ class MainWindow(QMainWindow):
         self.morseTextEdit.mouseReleaseEvent = self.ThemouseReleaseEvent
         self.morseTextEdit.setCursor(Qt.CursorShape.ArrowCursor)
 
+        self.lineEditRunningWPM.setText("*")
+
         self.morseTextStream = []
         self.idxMorseTextStream = -1
 
@@ -487,6 +490,8 @@ class MainWindow(QMainWindow):
             self.ProcessReceiveTextChar(msg)
         if msg[3] == SerialCmdCode.get('ping'):
             self.echoPingCmmd(msg)
+        if msg[3] == SerialCmdCode.get('uploadRunningWPM'):
+            self.ProcessRunningWPM(msg)
 
     def ProcessReceiveTextChar(self, msg):
         try:
@@ -530,6 +535,12 @@ class MainWindow(QMainWindow):
             self.morseTextStream.append(MCT)
         except Exception as e:
             print("can not append: ", e)
+
+    def ProcessRunningWPM(self, msg):
+        print("->ProcessRunningWPM(msg)")
+        RWPM = uploadRunningWPM(msg)
+        self.lineEditRunningWPM.setText(str(RWPM.getRunningWPM()))
+
 
     def evalBool(self, B):
         try:

@@ -390,6 +390,34 @@ background-color: rgb(85, 170, 255);</string>
       <string>Load Session</string>
      </property>
     </widget>
+    <widget class="QLineEdit" name="lineEditRunningWPM">
+     <property name="geometry">
+      <rect>
+       <x>420</x>
+       <y>280</y>
+       <width>21</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border-style: outset;
+border-width: 2px;
+border-color: blue;</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelRunningWPM">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>280</y>
+       <width>261</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Running WPM [2 x stuck key to reset to default]</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">

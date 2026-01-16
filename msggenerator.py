@@ -15,6 +15,7 @@ SerialCmdCode = {'addTone': 0xC0,
                  'stopmorsemsg': 0xD4,
 
                  'receivetextchar': 0xF0,
+                 'uploadRunningWPM': 0xF1,
 
                  'sendConfig': 0xA0,
                  'ping': 0xAA
@@ -356,6 +357,21 @@ class SendMorseMsg(CzeckSum, bitbash):
 
     def getMsg(self):
         return self.msg
+
+class uploadRunningWPM(CzeckSum, bitbash):
+    def __init__(self, _msg):
+        self.Length = 7
+        self.msg = _msg
+        self.cmmdCode = SerialCmdCode.get('uploadRunningWPM')
+        self.runningWPM = self.msg[4]
+
+    def getRunningWPM(self)-> int:
+        return self.runningWPM
+
+    def getMsg(self):
+        return self.msg
+
+
 
 
 class PlayMorseMsg(CzeckSum, bitbash):
